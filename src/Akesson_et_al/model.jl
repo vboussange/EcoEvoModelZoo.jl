@@ -3,7 +3,7 @@ using UnPack
 using DocStringExtensions
 
 """
-    $SIGNAURES
+    $SIGNATURES
 
 This model is inspired from [Akesson et al. 2021](https://www.nature.com/articles/s41467-021-24977-x).
 General version of the model, corresponding to original R script.
@@ -16,7 +16,8 @@ end
 
 function AkessonModel(mp; kwargs...)
     pars, u0 = init_params(;kwargs...)
-    mp = ParametricsModels.remake(mp, u0 = u0, p = NameTuple(pars...))
+    pars = NamedTuple([pair for pair in pars])
+    mp = ParametricsModels.remake(mp, u0 = u0, p = pars)
     AkessonModel(mp)
 end
 

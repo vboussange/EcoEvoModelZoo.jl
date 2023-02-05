@@ -14,7 +14,7 @@ using ForwardDiff
 using EcoEvoModelZoo
 using PyPlot
 
-R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
+R"source('./ecoevo_norun.R')"
 @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
 ic = [ninit; muinit] # merge initial conditions into a vector
 S = S |> Int
