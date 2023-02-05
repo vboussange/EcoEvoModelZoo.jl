@@ -1,5 +1,6 @@
 module EcoEvoModelZoo
 
-# Write your package code here.
+    include("Huisman_et_al.jl")
+    export ResourceCompetition, ResourceCompetitionSmoothMin, μsmooth, μ
 
 end
