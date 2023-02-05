@@ -147,7 +147,7 @@ Right-hand side of dynamical equations
 """
 function eqs!(dudt, u, pars, t)
     # Parameters
-    @unpack S, SC, SR, L, eta, nmin, venv, tE, Cmax, Cmin, Tmax, Tmin, aw, bw, kappa, d, s, Th, rho, arate, eps, vmat, W, mig, a, model, x = pars
+    @unpack S, SC, SR, L, eta, nmin, venv, tE, Cmax, Cmin, Tmax, Tmin, aw, bw, kappa, d, s, Th, rho, arate, eps, vmat, W, mig, a, model_type, x = pars
     V = s # convention from Akesson
 
     # Variables
@@ -174,7 +174,7 @@ function eqs!(dudt, u, pars, t)
     # Assign competition coeffs alpha_ij^k and selection pressures beta_ij^k
     for k = 1:L
         # If we have temperature-dependent competition:
-        if (model == "Tdep") || (model == "Tdep_trophic")
+        if (model_type == "Tdep") || (model_type == "Tdep_trophic")
             for i = 1:(SR-1)
                 alpha[i,i] = eta / sqrt(2.0 * V[i] + 2.0 * V[i] + eta^2)
                 for j = (i+1):SR

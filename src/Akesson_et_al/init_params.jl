@@ -9,7 +9,7 @@ function init_params(;
     L=50, # number of patches
     vbar=0.1,
     dbar=1e-5,
-    model="Tdep_trophic",
+    model_type="Tdep_trophic",
     kappa=0.1, # intrinsic mortality parameter
     eta=1, # competition width (centigrade; only for Tdep and Tdep_trophic)
     nmin=1e-5, # below this threshold density, genetic variances are reduced
@@ -22,7 +22,7 @@ function init_params(;
 )
     SR = S # number of resource species
 
-    if (model in ["trophic", "Tdep_trophic"])
+    if (model_type in ["trophic", "Tdep_trophic"])
         SC = S # ...consumer species
     else
         SC = 0 # number of consumer species: 0, unless we have...
@@ -42,7 +42,7 @@ function init_params(;
     Th = ones(S) # handling times in type II f.r. (dummy value if no consumers)
     arate = ones(S) # attack rates in type II f.r. (dummy value if no
 
-    if model in ["trophic", "Tdep_trophic"]
+    if model_type in ["trophic", "Tdep_trophic"]
         v = [v; rand(Uniform(0.5 * vbar, 1.5 * vbar), SC)] # add consumer genetic variances
         d = [d; rand(Uniform(0.1 * dbar, 10.0 * dbar), SC)] # add consumer dispersal rates
         rho = [rho; rand(Uniform(0.9*0.1, 1.1*0.1), SC)] # add consumer tradeoff parameters
@@ -85,7 +85,7 @@ function init_params(;
     end
 
     # initial traits and densities for consumers
-    if model in ["trophic", "Tdep_trophic"]
+    if model_type in ["trophic", "Tdep_trophic"]
         muinit = vcat(muinit, [Tmin + (Tmax - Tmin) * i / SC for i in 1:SC, j in 1:L])
         for i in (SR+1):S
             ninit[i, :] = exp.(-(muinit[i, 1] .- Tempinit) .^ 2 / (2 * 2^2))
@@ -97,7 +97,7 @@ function init_params(;
 
     # coerce parameters into a dictionary
     pars = Dict{Symbol,Any}()
-    @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
+    @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model_type, x
 
     return pars, ic
 end
