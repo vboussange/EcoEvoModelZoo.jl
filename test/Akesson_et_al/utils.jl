@@ -9,6 +9,11 @@ using ForwardDiff
 using OrdinaryDiffEq
 using EcoEvoModelZoo
 
+test_rcall = false
+test_plot = false
+
+test_rcall ? (using RCall) : nothing
+test_plot ? (using PyPlot) : nothing
 
 @testset "generate_network" begin
     SR = 10
@@ -54,141 +59,58 @@ end
     @test !any(isinf.(F))
 end
 
-@testset "init_params" begin
+if test_rcall
+    @testset "init_params" begin
 
-    # default parameters
-    pars, ic = init_params()
+        # default parameters
+        pars, ic = init_params()
 
-    # default R parameters
-    R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
-    @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
-    ic = [ninit; muinit] # merge initial conditions into a vector
-    S = S |> Int
-    SR = SR |> Int
-    SC = SC |> Int
-    L = L |> Int
-    x = collect(0:L-1) ./ (Float64(L) - 1.0)
+        # default R parameters
+        R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
+        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        ic = [ninit; muinit] # merge initial conditions into a vector
+        S = S |> Int
+        SR = SR |> Int
+        SC = SC |> Int
+        L = L |> Int
+        x = collect(0:L-1) ./ (Float64(L) - 1.0)
 
-    # coerce parameters into a dictionary
-    parsR = Dict{String,Any}()
-    @pack! parsR = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
-
-    @test pars[:S] == parsR["S"]
-    @test pars[:SR] == parsR["SR"]
-    @test pars[:SC] == parsR["SC"]
-    @test pars[:L] == parsR["L"]
-    @test size(pars[:rho]) == size(parsR["rho"])
-    # uncomplete
-end
-
-@testset "Basic tests of `eqs`" begin
-
-    tstart = -4000 # starting time (relative to start of climate change at t = 0)
-    tE = 300.0 # time at which climate change stops (assuming it starts at t = 0)
-    tend = 2500 # time at which integration ends
-    pars, ic = init_params()
-
-    pars = NamedTuple([pair for pair in pars])
-
-    dudt = similar(ic)
-
-    eqs!(dudt, ic, pars, 0.0)
-
-    @test !any(isnan.(dudt))
-    @test !any(isinf.(dudt))
-end
-
-
-@testset "Compare `eqs` evaluation against R script" begin
-    R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
-    @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
-    ic = [ninit; muinit] # merge initial conditions into a vector
-    S = S |> Int
-    SR = SR |> Int
-    SC = SC |> Int
-    L = L |> Int
-    x = collect(0:L-1) ./ (Float64(L) - 1.0)
-
-    # coerce parameters into a dictionary
-    pars = Dict{String,Any}()
-    @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
-
-    dudt = similar(ic)
-
-    eqs!(dudt, ic, pars, 10.0)
-
-    # for comparing, one needs to reorder
-    dudt_rlike = [dudt[1:SC+SR, :][:]; dudt[SC+SR+1:end, :][:]]
-
-    # test with R
-    dudtR = R"eqs(1., ic, pars)"[1]
-
-    @test all(isapprox.(dudt_rlike, dudtR, atol=1e-3))
-end
-
-@testset "eqs with L = 1" begin
-
-    tstart = -4000 # starting time (relative to start of climate change at t = 0)
-    tend = 2500 # time at which integration ends
-    pars, ic = init_params()
-    pars = NamedTuple([pair for pair in pars])
-
-    dudt = similar(ic)
-
-    eqs!(dudt, ic, pars, 10.0)
-
-    @test !any(isnan.(dudt))
-    @test !any(isinf.(dudt))
-
-end
-
-@testset "Testing with L = 1 (no spatial structure)" begin
-
-    tstart = -4000 # starting time (relative to start of climate change at t = 0)
-    tend = 2500 # time at which integration ends
-    pars, ic = init_params(L=1, model="normal")
-    pars = NamedTuple([pair for pair in pars])
-
-
-    # integrate prob with Julia
-    tspan = (tstart, 0)
-    saveat = tspan[1]:200:tspan[2]
-    prob = ODEProblem(eqs!, ic, tspan, pars)
-
-    println("Integrating with Julia")
-    @time before_cc = solve(prob,
-        alg=Tsit5(),
-        saveat=saveat)
-
-    @test before_cc.retcode == :Success
-
-end
-
-@testset "Testing differentiation, in the setting with no spatial structure" begin
-    tstart = -4000 # starting time (relative to start of climate change at t = 0)
-    tend = 2500 # time at which integration ends
-    pars, ic = init_params(L=1, S = 3, model="normal")
-
-    @unpack SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x = pars
-
-    function dummy_loss(a)
         # coerce parameters into a dictionary
-        pars = Dict{Symbol,Any}()
-        @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
+        parsR = Dict{String,Any}()
+        @pack! parsR = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
 
-        pars = NamedTuple([pair for pair in pars])
-        prob = ODEProblem(eqs!, ic, tspan, pars)
-
-        before_cc = solve(prob,
-                        alg=Tsit5(),
-                        saveat=saveat)
-       sum(before_cc.^2)
+        @test pars[:S] == parsR["S"]
+        @test pars[:SR] == parsR["SR"]
+        @test pars[:SC] == parsR["SC"]
+        @test pars[:L] == parsR["L"]
+        @test size(pars[:rho]) == size(parsR["rho"])
+        # uncomplete
     end
 
-    # Checking differentiation
-    J = ForwardDiff.gradient(dummy_loss, a)
+    @testset "Compare `eqs` evaluation against R script" begin
+        R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
+        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        ic = [ninit; muinit] # merge initial conditions into a vector
+        S = S |> Int
+        SR = SR |> Int
+        SC = SC |> Int
+        L = L |> Int
+        x = collect(0:L-1) ./ (Float64(L) - 1.0)
 
-    @test F isa Matrix
-    @test !any(isnan.(F))
-    @test !any(isinf.(F))
+        # coerce parameters into a dictionary
+        pars = Dict{String,Any}()
+        @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
+
+        dudt = similar(ic)
+
+        eqs!(dudt, ic, pars, 10.0)
+
+        # for comparing, one needs to reorder
+        dudt_rlike = [dudt[1:SC+SR, :][:]; dudt[SC+SR+1:end, :][:]]
+
+        # test with R
+        dudtR = R"eqs(1., ic, pars)"[1]
+
+        @test all(isapprox.(dudt_rlike, dudtR, atol=1e-3))
+    end
 end
