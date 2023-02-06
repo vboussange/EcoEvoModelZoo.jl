@@ -14,13 +14,14 @@ Base.@kwdef struct AkessonModel{MP} <: AbstractModel
     mp::MP
 end
 
-function AkessonModel(mp; kwargs...)
+function init_akesson_model(mp::ModelParams; kwargs...)
+
     pars, u0 = init_params(;kwargs...)
     pars = NamedTuple([pair for pair in pars])
-    mp = ParametricsModels.remake(mp, u0 = u0, p = pars)
+    mp = ParametricModels.remake(mp, u0 = u0, p = pars)
     AkessonModel(mp)
 end
 
 function (em::AkessonModel)(du, u, p, t)
-    eqs!(dudt, u, pars, t)
+    eqs!(du, u, p, t)
 end

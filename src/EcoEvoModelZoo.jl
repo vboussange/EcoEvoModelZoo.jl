@@ -7,5 +7,5 @@ module EcoEvoModelZoo
     include("Akesson_et_al/model.jl")
     include("Akesson_et_al/plotting.jl")
     include("Akesson_et_al/utils.jl")
-    export generate_network, organize_data, smoothstep, Temp, funcresp!
+    export generate_network, organize_data, smoothstep, Temp, funcresp!, init_akesson_model, AkessonModel
 end

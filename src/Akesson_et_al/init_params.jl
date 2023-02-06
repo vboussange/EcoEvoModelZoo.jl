@@ -1,4 +1,6 @@
 using DocStringExtensions
+using Distributions
+using LinearAlgebra
 """
     $SIGNATURES
 

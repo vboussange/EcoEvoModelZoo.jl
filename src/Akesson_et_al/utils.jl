@@ -44,41 +44,41 @@ function generate_network(SR::Int, SC::Int)
 end
 
 
-using DataFrames
-"""
-    organize_data(dat, times, pars)
+# using DataFrames
+# """
+#     organize_data(dat, times, pars)
 
-This code is probably not working
-"""
 # This code is probably not working
-function organize_data(dat, times, pars)
-    dat = DataFrame(dat) # convert to data frame 
-    dat = filter(dat, dat.time .∈ times) # only keep specified time points
-    names!(dat, Symbol("time")) # name the first column "time"
-    index = 2 # keep track of which column we are naming with this counter
-    for k in 1:pars.L
-        for i in 1:pars.S
-            # name columns for densities
-            # naming convention: "type_species_patch" - type is either m (trait), or n (density)
-            names!(dat, index, "n_$i_$k") 
-            index += 1
-        end
-    end
-    for k in 1:pars.L
-        for i in 1:pars.S
-            # name columns for trait values
-            # (same naming convention)
-            names!(dat, index, "m_$i_$k")
-            index += 1
-        end
-    end
-    dat = pivot_longer(dat, cols=2:size(dat, 2), names_to="variable", values_to="v") # normalize table by collapsing columns into a key-value column pair
-    dat = separate(dat, :variable, ["type", "species", "patch"], sep="_") # split "variable" into value type (density or trait), species, and patch
-    dat = mutate(dat, :species => parse.(Int, :species), :patch => parse.(Int, :patch)) # convert species & patch from string ("1","2",...) to integer (1,2,...)
-    dat = pivot_wider(dat, names_from="type", values_from="v") # split trait and abundance values into two columns
-    dat = mutate(dat, :tl => ifelse.(:species .> SR, "C", "R")) # trophic level (tl): species with index greater than SR are consumers ("C"), the rest are resources ("R")
-    return dat # return tidy table
-end
+# """
+# # This code is probably not working
+# function organize_data(dat, times, pars)
+#     dat = DataFrame(dat) # convert to data frame 
+#     dat = filter(dat, dat.time .∈ times) # only keep specified time points
+#     names!(dat, Symbol("time")) # name the first column "time"
+#     index = 2 # keep track of which column we are naming with this counter
+#     for k in 1:pars.L
+#         for i in 1:pars.S
+#             # name columns for densities
+#             # naming convention: "type_species_patch" - type is either m (trait), or n (density)
+#             names!(dat, index, "n_$i_$k") 
+#             index += 1
+#         end
+#     end
+#     for k in 1:pars.L
+#         for i in 1:pars.S
+#             # name columns for trait values
+#             # (same naming convention)
+#             names!(dat, index, "m_$i_$k")
+#             index += 1
+#         end
+#     end
+#     dat = pivot_longer(dat, cols=2:size(dat, 2), names_to="variable", values_to="v") # normalize table by collapsing columns into a key-value column pair
+#     dat = separate(dat, :variable, ["type", "species", "patch"], sep="_") # split "variable" into value type (density or trait), species, and patch
+#     dat = mutate(dat, :species => parse.(Int, :species), :patch => parse.(Int, :patch)) # convert species & patch from string ("1","2",...) to integer (1,2,...)
+#     dat = pivot_wider(dat, names_from="type", values_from="v") # split trait and abundance values into two columns
+#     dat = mutate(dat, :tl => ifelse.(:species .> SR, "C", "R")) # trophic level (tl): species with index greater than SR are consumers ("C"), the rest are resources ("R")
+#     return dat # return tidy table
+# end
 
 
 # from C++ code
