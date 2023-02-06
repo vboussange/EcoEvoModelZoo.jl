@@ -4,7 +4,10 @@ using LinearAlgebra
 """
     $SIGNATURES
 
-Returns a Dictionary with all params for Akesson model
+Returns a Dictionary with all params for Akesson model.
+
+# Arguments
+- `model_type`: can take values "normal", "Tdep", "Tdep_trophic" and "trophic".
 """
 function init_akesson_model(;
     tE = 300.0, # time at which climate change stops (assuming it starts at t = 0),
