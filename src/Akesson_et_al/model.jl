@@ -16,7 +16,7 @@ end
 
 function init_akesson_model(mp::ModelParams; kwargs...)
 
-    pars, u0 = init_params(;kwargs...)
+    pars, u0 = init_akesson_model(;kwargs...)
     pars = NamedTuple([pair for pair in pars])
     mp = ParametricModels.remake(mp, u0 = u0, p = pars)
     AkessonModel(mp)

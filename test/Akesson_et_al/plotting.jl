@@ -12,7 +12,7 @@ using Distributions
 using LinearAlgebra
 using ForwardDiff
 using EcoEvoModelZoo
-using PyPlot
+using PythonCall; plt = pyimport("matplotlib")
 
 R"source('./ecoevo_norun.R')"
 @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit

@@ -1,4 +1,6 @@
 using DocStringExtensions
+plt = pyimport("matplotlib")
+
 """
 $SIGNATURES
 
@@ -7,7 +9,7 @@ Here we plot both consumers and resources
 function plotting_N_through_time(ax, u, ts, l, pars)
     @unpack SR, SC = pars
     @assert size(u, 1) == 2 * (SR + SC) # u stores N and μ
-    _cmap = PyPlot.cm.get_cmap("tab20", SR+SC) # only for cb
+    _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
     color_palette = [_cmap(i) for i in 1:SR+SC]
     for i in 1:SR+SC
         ax.plot(ts, u[i,l,:], c = color_palette[i])
@@ -27,7 +29,7 @@ Here we plot both consumers and resources
 function plotting_mu_through_time(ax, u, ts, l, pars)
     @unpack SR, SC = pars
     @assert size(u, 1) == 2 * (SR + SC) # u stores N and μ
-    _cmap = PyPlot.cm.get_cmap("tab20", SR+SC) # only for cb
+    _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
     color_palette = [_cmap(i) for i in 1:SR+SC]
     for i in 1:SR+SC
         ax.plot(ts, u[SR+SC + i,l,:], c = color_palette[i])
@@ -57,7 +59,7 @@ Here we plot both consumers and resources
 """
 function plotting_distribution(ax, u, t, i, l, pars)
     @unpack SR, SC, L, s, Tmin, Tmax = pars
-    _cmap = PyPlot.cm.get_cmap("tab20", SR+SC) # only for cb
+    _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
     color_palette = [_cmap(i) for i in 1:SR+SC]
     xs = range(Tmin - 5., Tmax + 5, length=150)
     Ni = u[i, l, t]

@@ -6,11 +6,12 @@ using LinearAlgebra
 
 Returns a Dictionary with all params for Akesson model
 """
-function init_params(;
-    S=50,
+function init_akesson_model(;
+    tE = 300.0, # time at which climate change stops (assuming it starts at t = 0),
+    S=50, # number of species; if consumers, nb. of consumers = SC and total number of species = 2 * S
     L=50, # number of patches
-    vbar=0.1,
-    dbar=1e-5,
+    vbar=0.1, # mean genetic variance
+    dbar=1e-5, # mean dispersal rate
     model_type="Tdep_trophic",
     kappa=0.1, # intrinsic mortality parameter
     eta=1, # competition width (centigrade; only for Tdep and Tdep_trophic)
@@ -60,7 +61,6 @@ function init_params(;
     vmat = repeat(v, outer=(1, L)) # genetic variances at each patch
     s = v .+ venv # species' total phenotypic variances
     eps = vcat(zeros(SR), 0.3 * ones(SC)) # feeding efficiency of consumers
-    tE = 300.0 # time at which climate change stops (assuming it starts at t = 0)
 
     # dispersal matrix
     mig = zeros(L, L) # initialize dispersal matrix
