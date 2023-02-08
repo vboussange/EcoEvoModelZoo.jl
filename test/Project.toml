@@ -1,5 +1,6 @@
 [deps]
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OrdinaryDiffEq = "1dea7af3-3e70-54e6-95c3-0bf5283fa5ed"
 ParametricModels = "ea05b012-1b06-4aec-a786-2a545e229cd0"
 RCall = "6f49c342-dc21-5d91-9882-a32aef131414"
