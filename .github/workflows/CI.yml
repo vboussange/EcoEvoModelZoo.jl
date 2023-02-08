@@ -52,6 +52,11 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
+      - run: |
+          julia --project=. --print '
+            using Pkg
+            pkg"registry add https://github.com/vboussange/VBoussangeRegistry.git"
+            '
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
