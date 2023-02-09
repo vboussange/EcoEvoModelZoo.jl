@@ -17,5 +17,5 @@ module EcoEvoModelZoo
         end
     end
     include("Akesson_et_al/utils.jl")
-    export generate_network, organize_data, smoothstep, Temp, funcresp!, init_akesson_model, AkessonModel
+    export generate_network, organize_data, smoothstep, Temp, funcresp!, init_akesson_model, AkessonModel, WidthGrowth, Competition, Trophic
 end

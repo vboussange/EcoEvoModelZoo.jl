@@ -102,7 +102,16 @@ end
 """
 Temperature as a function of space (x), time (t), and some climate parameters
 """
-function Temp(x, t, tE, Cmax, Cmin, Tmax, Tmin)
+Base.@kw_def struct Temp
+    tE::Float64 = 300.0 # time at which climate change stops (assuming it starts at t = 0),
+    Cmax::Float64 = 9.66 # projected temperature increase at poles
+    Cmin::Float64 = 1.26 # projected temperature increase at equator
+    Tmax::Float64 = 25.0 # initial mean temperature at equator
+    Tmin::Float64 =-10.0 # initial mean temperature at poles
+end
+
+function temp_fun::Temp(x, t)
+    @unpack tE, Cmax, Cmin, Tmax, Tmin = temp_fun
     T = (Tmax-Tmin)*x+Tmin+((Cmin-Cmax)*x+Cmax)*smoothstep(t/tE)
     return T
 end
@@ -118,7 +127,8 @@ Input:
 Output:
 - A matrix F(i,j), the feeding rate of consumer i on resource j
 """
-function funcresp!(F, n::Vector{<:Real}, Th::Vector{<:Real}, arate::Vector{<:Real}, W::Matrix{<:Real})
+function funcresp!(F, p, trophic::Trophic{true})
+    @unpack arate, Th, W = p
     S = length(n)
     for i=1:S
         Wn = 0.0
@@ -132,130 +142,6 @@ function funcresp!(F, n::Vector{<:Real}, Th::Vector{<:Real}, arate::Vector{<:Rea
     return F
 end
 
-"""
-    eqs(u, pars, t)
-
-Right-hand side of dynamical equations
- Input:
- - time: Time at which function is evaluated (explicit time-dependence)
- - u: Vector of u variables, with 2*S*L entries, where S is the number
- of species and L the number of patches. The first S*L entries are the
- densities, the second S*L entries are the trait means.
- - pars: Model parameters, given as members of a list
- Output:
- - The derivatives of the densities and trait means, as a vector in a list */
-"""
-function eqs!(dudt, u, pars, t)
-    # Parameters
-    @unpack S, SC, SR, L, eta, nmin, venv, tE, Cmax, Cmin, Tmax, Tmin, aw, bw, kappa, d, s, Th, rho, arate, eps, vmat, W, mig, a, model_type, x = pars
-    V = s # convention from Akesson
-
-    # Variables
-    sumgr = 0.0
-    summig = 0.0
-    bsumgr = 0.0
-    bsummig = 0.0
-
-    # Assign matrices required; calculate local temperatures
-    # TODO: for optimization, those matrices should be stored
-    F = zeros(eltype(u), S, S)
-    alpha = zeros(eltype(u), S, S)
-    beta = zeros(eltype(u), S, S)
-    n = @view u[1:SC+SR,:]
-    m = @view u[SC+SR+1:end,:]
-    dndt = @view dudt[1:SC+SR,:]
-    dmdt = @view dudt[SC+SR+1:end,:]
-    # initialising vectors
-    dndt .= 0.
-    dmdt .= 0.
-
-    T = Temp.(x, t, tE, Cmax, Cmin, Tmax, Tmin) # Vector of temperatures
-
-    # Assign competition coeffs alpha_ij^k and selection pressures beta_ij^k
-    for k = 1:L
-        # If we have temperature-dependent competition:
-        if (model_type == "Tdep") || (model_type == "Tdep_trophic")
-            for i = 1:(SR-1)
-                alpha[i,i] = eta / sqrt(2.0 * V[i] + 2.0 * V[i] + eta^2)
-                for j = (i+1):SR
-                    Omega = 2.0 * V[i] + 2.0 * V[j] + eta^2
-                    dm = m[j,k] - m[i,k]
-                    alpha[i,j] = eta * exp(-dm*dm/Omega)/sqrt(Omega)
-                    alpha[j,i] = alpha[i,j]
-                    beta[i,j] = 2.0 * V[i] * alpha[i,j] * dm / Omega
-                    beta[j,i] = - beta[i,j] * V[j]/V[i]
-                end
-            end
-            alpha[SR, SR] = eta/sqrt(2.0*V[SR]+2.0*V[SR]+eta^2)
-        else # If no temperature-dependent competition, it's much simpler:
-            alpha .= a
-        end
-
-        funcresp!(F, n[:, k], Th, arate, W) # Feeding rate of species i on j in patch k
-        
-        # For debugging
-        # if k == 1
-        #     @show F[1,1]
-        #     @show alpha[1,1]
-        #     @show beta[1,3]
-        #     # @show x
-        #     @show n[1,3]
-        # end
-
-        # Loop over species
-        for i = 1:S
-            sumgr = 0.0
-            bsumgr = 0.0
-            # Species interaction terms in density and then trait evolution equations
-            for j = 1:S
-                sumgr += -n[i, k] * alpha[i, j] * n[j, k] + eps[i] * n[i, k] * F[i, j] - n[j, k] * F[j, i]
-                bsumgr += beta[i, j] * n[j, k]
-            end
-            summig = 0.0
-            bsummig = 0.0
-            if L > 1 # otherwise, no spatial structure
-                # Dispersal terms in density and then trait evolution equations
-                for l in 1:L
-                    summig += mig[k, l] * n[i, l] - n[i, k] * mig[l, k]
-                    bsummig += mig[k, l] * n[i, l] * (m[i, l]-m[i, k]) / (n[i, k]+1.0e-10)
-                end
-                # Growth terms in the equations
-                summig *= d[i]
-                bsummig *= d[i]
-            end
-            w = bw - aw * m[i, k]
-            sw = w^2 + V[i]
-            ef = rho[i] * exp(-(T[k]-m[i, k]) * (T[k]-m[i, k])/(2.0*sw)) / sqrt(sw)
-            b = ef - kappa
-            g = ef * V[i] * (T[k]-m[i, k]) / sw
-            q = vmat[i, k] * smoothstep(n[i, k]/nmin)
-
-            h2 = q ./ (q .+ venv) # Heritability
-
-            # Assign calculated rates to vector of derivatives for output
-            dndt[i, k] = (n[i, k]*b+sumgr)*smoothstep(n[i, k]/1.0e-6) + summig
-            dmdt[i, k] = h2 * (g - bsumgr + bsummig)
-            
-            # For debugging
-            # if i == 1 && k == 1
-            #     @show bsummig
-            #     @show bsumgr
-            #     @show summig
-            #     @show sumgr
-            # end
-
-            # Periodic boundary conditions
-            if L > 1 # otherwise, no spatial structure
-                if (k == 1)
-                    dndt[i, k] += d[i]*(mig[1, 2]*n[i, 2] - mig[2, 1] * n[i, 1])
-                    dmdt[i, k] += d[i] * h2 * mig[1, 2] * n[i, 2] * (m[i, 2]-m[i, 1]) / (n[i, 1]+1.0e-10)
-                elseif (k == L)
-                    # update dudt for density
-                    dndt[i, k]  += d[i] * (mig[k, k-1] * n[i, k-1] - mig[k-1, k] * n[i,k])
-                    # update dudt for trait evolution
-                    dmdt[i, k] += d[i] * h2 * mig[k,k-1] * n[i,k-1] * (m[i,k-1] - m[i,k]) / (n[i,k] + 1.0e-10)
-                end
-            end
-        end
-    end
+function funcresp!(F, p, trophic::Trophic{false})
+    return 0.
 end
