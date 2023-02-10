@@ -18,7 +18,7 @@ function init_params_akesson_model(land::Landscape,
                             vbar=0.1, # mean genetic variance
                             dbar=1e-5, # mean dispersal rate
                             kappa=0.1, # intrinsic mortality parameter
-                            eta=1, # competition width (centigrade; only for Tdep and Tdep_trophic)
+                            eta=1., # competition width (centigrade; only for Tdep and Tdep_trophic)
                             nmin=1e-5, # below this threshold density, genetic variances are reduced
                             aw=0.1, # (negative) slope of trait-dependence of tolerance width
                             bw=4, # intercept of trait-dependence of tolerance width
