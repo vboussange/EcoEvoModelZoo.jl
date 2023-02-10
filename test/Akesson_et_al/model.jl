@@ -35,7 +35,7 @@ end
 end
 
 if test_rcall
-    @testset "Testing `eqs` integration against R script" begin
+    @testset "Testing `eqs` integration against R script - Tdep_trophic" begin
         R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
         @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
         ic = [ninit; muinit] # merge initial conditions into a vector
@@ -62,10 +62,118 @@ if test_rcall
                                     SC,                         
                                     mp = ModelParams(;p = pars, u0 = ic, tspan, alg, reltol, abstol, saveat),
                                     land = Landscape(L, x, mig),
-                                    temp = Temperature(Tmax, Tmin, Cmax, Cmin, tE,),
+                                    temp = Temperature(;Tmax, Tmin, Cmax, Cmin, tE,),
                                     width_growth = WidthGrowth{:TraitDep}(), 
                                     competition = Competition{:TraitDep}(), 
                                     trophic= Trophic{true}(), 
+                                    )
+
+        println("Integrating with Julia")
+        @time before_cc = simulate(model)
+        @test before_cc.retcode == :Success
+
+        uend = Array(before_cc)[:, :, end]
+
+        # integrate prob with R
+        println("Integrating with R")
+        @time R"""
+            before_cc <- ode(y=ic, times=seq(tstart, 0, by=200), func=eqs, parms=pars, method='bdf_d')
+            uendR <- as.numeric(before_cc[nrow(before_cc),-1]) # final state -> new initial cond.
+            """
+
+        @rget uendR
+        uend_rlike = [uend[1:SC+SR, :][:]; uend[SC+SR+1:end, :][:]]
+
+        max_error_idx = argmax(abs.(uend_rlike .- uendR))
+
+        @test abs((uend_rlike[max_error_idx] - uendR[max_error_idx]) / uendR[max_error_idx]) < 0.2
+
+    end
+    @testset "Testing `eqs` integration against R script - Tdep" begin
+        R"source('/Users/victorboussange/ETHZ/projects/EcoEvoModelZoo.jl/test/Akesson_et_al/ecoevo_norun_Tdep.R')"
+        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        ic = [ninit; muinit] # merge initial conditions into a vector
+        S = S |> Int
+        SR = SR |> Int
+        SC = SC |> Int
+        L = L |> Int
+        x = collect(0:L-1) ./ (Float64(L) - 1.0)
+
+        # integrate prob with Julia
+        alg = Tsit5()
+        abstol = 1e-6
+        reltol = 1e-6
+        tstart = -4000 # starting time (relative to start of climate change at t = 0)
+        tspan = (tstart, 0)
+        saveat = tspan[1]:200:tspan[2]
+        
+         # coerce parameters into a dictionary
+        pars = Dict{Symbol,Any}()
+        V = s
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        pars = NamedTuple([pair for pair in pars])
+        model = init_akesson_model(;SR,
+                                    SC,                         
+                                    mp = ModelParams(;p = pars, u0 = ic, tspan, alg, reltol, abstol, saveat),
+                                    land = Landscape(L, x, mig),
+                                    temp = Temperature(;Tmax, Tmin, Cmax, Cmin, tE,),
+                                    width_growth = WidthGrowth{:TraitDep}(), 
+                                    competition = Competition{:TraitDep}(), 
+                                    trophic= Trophic{false}(), 
+                                    )
+
+        println("Integrating with Julia")
+        @time before_cc = simulate(model)
+        @test before_cc.retcode == :Success
+
+        uend = Array(before_cc)[:, :, end]
+
+        # integrate prob with R
+        println("Integrating with R")
+        @time R"""
+            before_cc <- ode(y=ic, times=seq(tstart, 0, by=200), func=eqs, parms=pars, method='bdf_d')
+            uendR <- as.numeric(before_cc[nrow(before_cc),-1]) # final state -> new initial cond.
+            """
+
+        @rget uendR
+        uend_rlike = [uend[1:SC+SR, :][:]; uend[SC+SR+1:end, :][:]]
+
+        max_error_idx = argmax(abs.(uend_rlike .- uendR))
+
+        @test abs((uend_rlike[max_error_idx] - uendR[max_error_idx]) / uendR[max_error_idx]) < 0.2
+
+    end
+    @testset "Testing `eqs` integration against R script - standard model" begin
+        R"source('/Users/victorboussange/ETHZ/projects/EcoEvoModelZoo.jl/test/Akesson_et_al/ecoevo_norun_std.R')"
+        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        ic = [ninit; muinit] # merge initial conditions into a vector
+        S = S |> Int
+        SR = SR |> Int
+        SC = SC |> Int
+        L = L |> Int
+        x = collect(0:L-1) ./ (Float64(L) - 1.0)
+
+        # integrate prob with Julia
+        alg = Tsit5()
+        abstol = 1e-6
+        reltol = 1e-6
+        tstart = -4000 # starting time (relative to start of climate change at t = 0)
+        tspan = (tstart, 0)
+        saveat = tspan[1]:200:tspan[2]
+        
+         # coerce parameters into a dictionary
+        pars = Dict{Symbol,Any}()
+        V = s
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        pars = NamedTuple([pair for pair in pars])
+        model = init_akesson_model(;SR,
+                                    SC,                         
+                                    mp = ModelParams(;p = pars, u0 = ic, tspan, alg, reltol, abstol, saveat),
+                                    land = Landscape(L, x, mig),
+                                    temp = Temperature(;Tmax, Tmin, Cmax, Cmin, tE,),
+                                    width_growth = WidthGrowth{:TraitDep}(), 
+                                    competition = Competition{:Standard}(), 
+                                    trophic= Trophic{false}(), 
                                     )
 
         println("Integrating with Julia")
