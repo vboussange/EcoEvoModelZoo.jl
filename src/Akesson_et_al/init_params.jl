@@ -70,8 +70,6 @@ function init_params_akesson_model(land::Landscape,
     end
     # all other parameters
     venv = vbar # environmental variance
-    vmat = repeat(v, outer=(1, L)) # genetic variances at each patch
-    V = v .+ venv # species' total phenotypic variances
 
     # initial conditions
     # initial temperatures
@@ -98,7 +96,7 @@ function init_params_akesson_model(land::Landscape,
 
     ic = [ninit; muinit] # merge initial conditions into a vector
     
-    @pack! pars = rho, kappa, venv, vmat, V, nmin, d
+    @pack! pars = rho, kappa, venv, v, nmin, d
 
     return pars, ic, Tempinit, x
 end

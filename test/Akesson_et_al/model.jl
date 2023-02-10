@@ -37,7 +37,7 @@ end
 if test_rcall
     @testset "Testing `eqs` integration against R script - Tdep_trophic" begin
         R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
-        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        @rget SR SC S L rho kappa a eta eps W venv v s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
         ic = [ninit; muinit] # merge initial conditions into a vector
         S = S |> Int
         SR = SR |> Int
@@ -55,8 +55,7 @@ if test_rcall
         
          # coerce parameters into a dictionary
         pars = Dict{Symbol,Any}()
-        V = s
-        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, v, nmin, aw, bw, Th, arate, d
         pars = NamedTuple([pair for pair in pars])
         model = init_akesson_model(;SR,
                                     SC,                         
@@ -91,7 +90,7 @@ if test_rcall
     end
     @testset "Testing `eqs` integration against R script - Tdep" begin
         R"source('/Users/victorboussange/ETHZ/projects/EcoEvoModelZoo.jl/test/Akesson_et_al/ecoevo_norun_Tdep.R')"
-        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        @rget SR SC S L rho kappa a eta eps W venv v nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
         ic = [ninit; muinit] # merge initial conditions into a vector
         S = S |> Int
         SR = SR |> Int
@@ -109,8 +108,7 @@ if test_rcall
         
          # coerce parameters into a dictionary
         pars = Dict{Symbol,Any}()
-        V = s
-        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, v, nmin, aw, bw, Th, arate, d
         pars = NamedTuple([pair for pair in pars])
         model = init_akesson_model(;SR,
                                     SC,                         
@@ -145,7 +143,7 @@ if test_rcall
     end
     @testset "Testing `eqs` integration against R script - standard model" begin
         R"source('/Users/victorboussange/ETHZ/projects/EcoEvoModelZoo.jl/test/Akesson_et_al/ecoevo_norun_std.R')"
-        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+        @rget SR SC S L rho kappa a eta eps W venv v nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
         ic = [ninit; muinit] # merge initial conditions into a vector
         S = S |> Int
         SR = SR |> Int
@@ -164,7 +162,7 @@ if test_rcall
          # coerce parameters into a dictionary
         pars = Dict{Symbol,Any}()
         V = s
-        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, v, nmin, aw, bw, Th, arate, d
         pars = NamedTuple([pair for pair in pars])
         model = init_akesson_model(;SR,
                                     SC,                         

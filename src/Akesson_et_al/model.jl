@@ -55,17 +55,19 @@ get_nb_species(em::AkessonModel) = em.SR + em.SC
 
 function (em::AkessonModel)(dudt, u, pars, t)
     # Parameters
-    @unpack nmin, venv, kappa, d, V, rho, vmat = pars
+    @unpack nmin, venv, kappa, d, venv, v, rho = pars
     @unpack width_growth, competition, trophic, feeding_rates, alpha, beta, SR, SC, landscape, temp = em
     @unpack mig, x, L = landscape
 
     S = get_nb_species(em)
 
-    # Variables
+    # internal variable declaration
     sumgr = 0.0
     summig = 0.0
     bsumgr = 0.0
     bsummig = 0.0
+    V = v .+ venv # species' total phenotypic variances
+
 
     # Assign matrices required; calculate local temperatures
 
@@ -83,7 +85,7 @@ function (em::AkessonModel)(dudt, u, pars, t)
     for k = 1:L
         nk = @view n[:, k]
         mk = @view m[:, k]
-        _update_alpha_beta!(mk, em, pars)
+        _update_alpha_beta!(mk, em, V, pars)
         funcresp!(feeding_rates, nk, pars, trophic) # Feeding rate of species i on j in patch k
         wk = _get_width_growth_curve(pars, mk, width_growth)
         sw = wk.^2 .+ V
@@ -113,7 +115,7 @@ function (em::AkessonModel)(dudt, u, pars, t)
             ef = rho[i] * exp(-(T[k]-m[i, k]) * (T[k]-m[i, k])/(2.0*sw[i])) / sqrt(sw[i])
             b = ef - kappa
             g = ef * V[i] * (T[k]-m[i, k]) / sw[i]
-            q = vmat[i, k] * smoothstep(n[i, k]/nmin)
+            q = v[i] * smoothstep(n[i, k]/nmin)
 
             h2 = q ./ (q .+ venv) # Heritability
 
@@ -148,8 +150,8 @@ function (em::AkessonModel)(dudt, u, pars, t)
      return w
  end
  
- function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, p) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:TraitDep}}
-     @unpack eta, V = p
+ function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:TraitDep}}
+     @unpack eta = p
      @unpack alpha, beta, SR = em
      for i = 1:(SR-1)
          alpha[i,i] = eta / sqrt(2.0 * V[i] + 2.0 * V[i] + eta^2)
@@ -165,7 +167,7 @@ function (em::AkessonModel)(dudt, u, pars, t)
      alpha[SR, SR] = eta/sqrt(2.0*V[SR]+2.0*V[SR]+eta^2);
  end
  
- function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, p)  where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
+ function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p)  where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
     @unpack alpha, beta = em
     alpha .= p.a
     beta .= 0.
