@@ -31,17 +31,19 @@ end
     @test 0 < smoothstep(0.5) < 1
 end
 
-@testset "Temp" begin
-    Tmax = 25.0 # initial mean temperature at equator
-    Tmin = -10.0 # initial mean temperature at poles
-    Cmax = 9.66 # projected temperature increase at poles
-    Cmin = 1.26 # projected temperature increase at equator
-    x = 0.5
+@testset "Landscape" begin
+    land = Landscape(10)
+    @test land.mig isa Matrix
+end
+
+
+@testset "Temperature" begin
+    temp = Temperature()
+    land = Landscape(1)
     t = 50
-    tE = 300.0 # time at which climate change stops (assuming it starts at t = 0)
-    @test Temp(x, t, tE, Cmax, Cmin, Tmax, Tmin) isa Number
-    x = 1:10
-    @test Temp.(x, t, tE, Cmax, Cmin, Tmax, Tmin) isa Vector
+    @test temp.(land.x, t) isa Vector
+    land = Landscape(10)
+    @test temp.(land.x, t) isa Vector
 
 end
 
@@ -53,7 +55,10 @@ end
     Th = ones(SC + SR) # Vector of handling times (with dummy values for resource species)
     arate = ones(SC + SR)
     F = zeros(SR + SC, SR + SC)
-    funcresp!(F, n, Th, arate, W)
+    p = Dict{String, Any}()
+    @pack! p = W, Th, arate
+    trophic = Trophic{true}()
+    funcresp!(F, n, p, trophic)
     @test F isa Matrix
     @test !any(isnan.(F))
     @test !any(isinf.(F))

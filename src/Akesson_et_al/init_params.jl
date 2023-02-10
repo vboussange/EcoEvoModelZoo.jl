@@ -4,12 +4,14 @@ using LinearAlgebra
 """
     $SIGNATURES
 
-Returns a Dictionary with all params for Akesson model.
+Returns a Dictionary with all *biological* parameters for Akesson model.
 
 # Arguments
 - `model_type`: can take values "normal", "Tdep", "Tdep_trophic" and "trophic".
 """
-function init_params_akesson_model(L, SR, SC;
+function init_params_akesson_model(land::Landscape, 
+                            temp::Temperature,
+                            SR, SC;
                             width_growth::WG = WidthGrowth{:TraitDep}(), 
                             competition::CP = Competition{:TraitDep}(), 
                             trophic::Tr = Trophic{false}(),
@@ -20,9 +22,10 @@ function init_params_akesson_model(L, SR, SC;
                             nmin=1e-5, # below this threshold density, genetic variances are reduced
                             aw=0.1, # (negative) slope of trait-dependence of tolerance width
                             bw=4, # intercept of trait-dependence of tolerance width
-                            Tmax=25.0, # initial mean temperature at equator
-                            Tmin=-10.0,# initial mean temperature at poles
+                            w = 0.2, #trait-dependence of tolerance width
                         ) where {WG, CP, Tr}
+
+    @unpack L, x = land
     # coerce parameters into a dictionary
     pars = Dict{Symbol,Any}()
     S = SR + SC # set S to be the total number of species
@@ -56,36 +59,29 @@ function init_params_akesson_model(L, SR, SC;
         arate = ones(S) # attack rates in type II f.r. (dummy value if no
         Th[SR+1:S] .= rand(SC) .* (1 .- 0.5) .+ 0.5 # handling times in type II f.r.
         arate[SR+1:S] = rand(SC) .* (10 .- 1) .+ 1 # attack rates in type II f.r.
-        @pack! pars = W, arate
+        eps = vcat(zeros(SR), 0.3 * ones(SC)) # feeding efficiency of consumers
+        @pack! pars = W, arate, eps
     end
 
-    if WG <: WidthGrowth{TraitDep}
-
+    if WG <: WidthGrowth{:TraitDep}
+        @pack! pars = aw, bw
+    elseif WG <: WidthGrowth{:Standard}
+        @pack! pars = w
     end
     # all other parameters
     venv = vbar # environmental variance
     vmat = repeat(v, outer=(1, L)) # genetic variances at each patch
-    s = v .+ venv # species' total phenotypic variances
-    eps = vcat(zeros(SR), 0.3 * ones(SC)) # feeding efficiency of consumers
-
-    ## init landscape
-    # dispersal matrix
-    mig = zeros(L, L) # initialize dispersal matrix
-    for k in 2:L
-        mig[k-1, k] = 1 # each species can only migrate to the two
-    end
-    mig = mig + mig' # nearest-neighbor patches
-
-    # initial temperatures
-    if L > 1
-        Tempinit = Temp.(range(0, 1, L), 0, tE, Cmax, Cmin, Tmax, Tmin)
-        x = collect(0:L-1) ./ (Float64(L) - 1.0)
-    else
-        Tempinit = [0.5]
-        x = [0.5]
-    end
+    V = v .+ venv # species' total phenotypic variances
 
     # initial conditions
+    # initial temperatures
+    if L > 1 
+        Tempinit = temp.(x, 0)
+    else
+        Tempinit = [0.5]
+    end
+
+    @unpack Tmax, Tmin = temp
     muinit = [Tmin + (Tmax - Tmin) * i / SR for i in 1:SR, j in 1:L] # initial trait means
     ninit = zeros(S, L) # reserve memory for initial densities
     for i in 1:SR
@@ -102,7 +98,7 @@ function init_params_akesson_model(L, SR, SC;
 
     ic = [ninit; muinit] # merge initial conditions into a vector
     
-    @pack! pars = rho, kappa, eps, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Cmax, Cmin, tE, d, mig, x, width_growth
+    @pack! pars = rho, kappa, venv, vmat, V, nmin, d
 
     return pars, ic, Tempinit, x
 end

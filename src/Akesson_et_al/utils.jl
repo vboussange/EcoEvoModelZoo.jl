@@ -4,6 +4,10 @@ using DocStringExtensions
 using Statistics
 using StatsBase
 
+struct WidthGrowth{T} end # width growth type
+struct Trophic{T} end # trophic type
+struct Competition{T} end # competition type
+
 """
     generate_network(SR::Int, SC::Int)
 
@@ -100,24 +104,26 @@ function smoothstep(x)
 end
 
 """
+    $SIGNATURES
+
 Temperature as a function of space (x), time (t), and some climate parameters
 """
-Base.@kw_def struct Temp
+Base.@kwdef struct Temperature
     tE::Float64 = 300.0 # time at which climate change stops (assuming it starts at t = 0),
     Cmax::Float64 = 9.66 # projected temperature increase at poles
     Cmin::Float64 = 1.26 # projected temperature increase at equator
     Tmax::Float64 = 25.0 # initial mean temperature at equator
-    Tmin::Float64 =-10.0 # initial mean temperature at poles
+    Tmin::Float64 = -10.0 # initial mean temperature at poles
 end
 
-function temp_fun::Temp(x, t)
+function (temp_fun::Temperature)(x, t)
     @unpack tE, Cmax, Cmin, Tmax, Tmin = temp_fun
-    T = (Tmax-Tmin)*x+Tmin+((Cmin-Cmax)*x+Cmax)*smoothstep(t/tE)
-    return T
+    mytemp = (Tmax-Tmin)*x+Tmin+((Cmin-Cmax)*x+Cmax)*smoothstep(t/tE)
+    return mytemp
 end
 
 """
-funcresp(n::Vector{<:Real}, Th::Vector{<:Real}, arate::Vector{<:Real}, W::Matrix{<:Real})
+    $SIGNATURES
 Type II functional response
 Input:
 - n: Vector of population densities of all species in a given patch
@@ -127,7 +133,7 @@ Input:
 Output:
 - A matrix F(i,j), the feeding rate of consumer i on resource j
 """
-function funcresp!(F, p, trophic::Trophic{true})
+function funcresp!(F, n, p, ::Trophic{true})
     @unpack arate, Th, W = p
     S = length(n)
     for i=1:S
@@ -139,9 +145,34 @@ function funcresp!(F, p, trophic::Trophic{true})
             F[i, j] = arate[i]*W[i, j]*n[j]/(1.0 + arate[i]*Th[i]*Wn)
         end
     end
-    return F
 end
 
-function funcresp!(F, p, trophic::Trophic{false})
-    return 0.
+function funcresp!(F, n, p, ::Trophic{false})
+    return nothing
+end
+
+"""
+    $SIGNATURES
+
+Returns landscape parameters
+"""
+struct Landscape
+    L::Int64 # number of patches
+    x::Vector{Float64} # latitude for each patch
+    mig::Matrix{Int64} # dispersal matrix
+end
+
+function Landscape(L)
+    # dispersal matrix
+    if L > 1
+        x = collect(0:L-1) ./ (Float64(L) - 1.0)
+    else
+        x = [0.5]
+    end
+    mig = zeros(L, L) # initialize dispersal matrix
+    for k in 2:L
+        mig[k-1, k] = 1 # each species can only migrate to the two
+    end
+    mig = mig + mig' # nearest-neighbor patches
+    Landscape(L, x, mig)
 end

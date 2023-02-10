@@ -8,11 +8,15 @@ using OrdinaryDiffEq
 using Statistics
 using ForwardDiff
 
-test_rcall = false
+test_rcall = true
 test_plot = false
 
 test_rcall ? (using RCall) : nothing
 test_plot ? (using PyPlot) : nothing
+
+@testset "Init model" begin
+    model = init_akesson_model()
+end
 
 @testset "Testing Akesson default model" begin
     tstart = -4000 # starting time (relative to start of climate change at t = 0)
@@ -24,7 +28,7 @@ test_plot ? (using PyPlot) : nothing
     tspan = (tstart, 0)
     saveat = tspan[1]:200:tspan[2]
     
-    model = init_akesson_model(ModelParams(;tspan, alg, reltol, abstol, saveat))
+    model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat))
 
     sol = simulate(model)
     @test sol.retcode == :Success
@@ -41,20 +45,31 @@ if test_rcall
         L = L |> Int
         x = collect(0:L-1) ./ (Float64(L) - 1.0)
 
-        # coerce parameters into a dictionary
-        pars = Dict{Symbol,Any}()
-        @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
-        pars = NamedTuple([pair for pair in pars])
-
         # integrate prob with Julia
+        alg = Tsit5()
+        abstol = 1e-6
+        reltol = 1e-6
+        tstart = -4000 # starting time (relative to start of climate change at t = 0)
         tspan = (tstart, 0)
         saveat = tspan[1]:200:tspan[2]
-        prob = ODEProblem(eqs!, ic, tspan, pars)
+        
+         # coerce parameters into a dictionary
+        pars = Dict{Symbol,Any}()
+        V = s
+        @pack! pars = rho, kappa, a, eta, eps, W, venv, vmat, V, nmin, aw, bw, Th, arate, d
+        pars = NamedTuple([pair for pair in pars])
+        model = init_akesson_model(;SR,
+                                    SC,                         
+                                    mp = ModelParams(;p = pars, u0 = ic, tspan, alg, reltol, abstol, saveat),
+                                    land = Landscape(L, x, mig),
+                                    temp = Temperature(Tmax, Tmin, Cmax, Cmin, tE,),
+                                    width_growth = WidthGrowth{:TraitDep}(), 
+                                    competition = Competition{:TraitDep}(), 
+                                    trophic= Trophic{true}(), 
+                                    )
 
         println("Integrating with Julia")
-        @time before_cc = solve(prob,
-            alg=Tsit5(),
-            saveat=saveat)
+        @time before_cc = simulate(model)
         @test before_cc.retcode == :Success
 
         uend = Array(before_cc)[:, :, end]
@@ -86,7 +101,7 @@ end
     tspan = (tstart, 0)
     saveat = tspan[1]:200:tspan[2]
     
-    model = init_akesson_model(ModelParams(;tspan, alg, reltol, abstol, saveat); L = 1, model_type="normal")
+    model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat);)
 
     sol = simulate(model)
     @test sol.retcode == :Success
@@ -103,18 +118,23 @@ end
     tspan = (tstart, 0)
     saveat = tspan[1]:200:tspan[2]
     
-    model = init_akesson_model(ModelParams(;tspan, alg, reltol, abstol, saveat); L = 1, S = 3, model_type="normal")
+    model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat);
+                                land = Landscape(1),
+                                temp = Temperature(),
+                                width_growth = WidthGrowth{:Standard}(), 
+                                competition = Competition{:Standard}(), 
+                                trophic= Trophic{false}(), )
 
     function dummy_loss(a)
-        before_cc = simulate(model, p = (a = a,))
+        before_cc = simulate(model, p = (rho = rho,))
         sum(before_cc.^2)
     end
 
     # Checking differentiation
-    a = get_p(model).a
-    J = ForwardDiff.gradient(dummy_loss, a)
+    rho = get_p(model).rho
+    J = ForwardDiff.gradient(dummy_loss, rho)
 
-    @test J isa Matrix
+    @test J isa Vector
     @test !any(isnan.(J))
     @test !any(isinf.(J))
 end

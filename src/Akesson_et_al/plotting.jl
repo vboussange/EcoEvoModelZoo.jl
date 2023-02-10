@@ -6,8 +6,8 @@ $SIGNATURES
 
 Here we plot both consumers and resources
 """
-function plotting_N_through_time(ax, u, ts, l, pars)
-    @unpack SR, SC = pars
+function plotting_N_through_time(ax, u, ts, l, model)
+    @unpack SR, SC = model
     @assert size(u, 1) == 2 * (SR + SC) # u stores N and μ
     _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
     color_palette = [_cmap(i) for i in 1:SR+SC]
