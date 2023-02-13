@@ -15,14 +15,14 @@ function init_params_akesson_model(land::Landscape,
                             width_growth::WG = WidthGrowth{:TraitDep}(), 
                             competition::CP = Competition{:TraitDep}(), 
                             trophic::Tr = Trophic{false}(),
-                            vbar=0.1, # mean genetic variance
-                            dbar=1e-5, # mean dispersal rate
-                            kappa=0.1, # intrinsic mortality parameter
-                            eta=1., # competition width (centigrade; only for Tdep and Tdep_trophic)
+                            vbar=0.1, # mean genetic variance, used to generate genetic variance vector
+                            dbar=1e-5, # mean dispersal rate, used to generate dispersal vector
+                            kappa=[0.1], # intrinsic mortality parameter
+                            eta=[1.], # competition width (centigrade; only for Tdep and Tdep_trophic)
                             nmin=1e-5, # below this threshold density, genetic variances are reduced
-                            aw=0.1, # (negative) slope of trait-dependence of tolerance width
-                            bw=4, # intercept of trait-dependence of tolerance width
-                            w = 0.2, #trait-dependence of tolerance width
+                            aw=[0.1], # (negative) slope of trait-dependence of tolerance width
+                            bw=[4.], # intercept of trait-dependence of tolerance width
+                            w = [0.2], # tolerance width for when width_growth = WidthGrowth{:Standard}()
                         ) where {WG, CP, Tr}
 
     @unpack L, x = land
@@ -69,7 +69,7 @@ function init_params_akesson_model(land::Landscape,
         @pack! pars = w
     end
     # all other parameters
-    venv = vbar # environmental variance
+    venv = [vbar] # environmental variance
 
     # initial conditions
     # initial temperatures

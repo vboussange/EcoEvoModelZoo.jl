@@ -55,7 +55,7 @@ get_nb_species(em::AkessonModel) = em.SR + em.SC
 
 function (em::AkessonModel)(dudt, u, pars, t)
     # Parameters
-    @unpack nmin, venv, kappa, d, venv, v, rho = pars
+    @unpack nmin, venv, kappa, d, v, rho = pars
     @unpack width_growth, competition, trophic, feeding_rates, alpha, beta, SR, SC, landscape, temp = em
     @unpack mig, x, L = landscape
 
@@ -113,11 +113,11 @@ function (em::AkessonModel)(dudt, u, pars, t)
             end
 
             ef = rho[i] * exp(-(T[k]-m[i, k]) * (T[k]-m[i, k])/(2.0*sw[i])) / sqrt(sw[i])
-            b = ef - kappa
+            b = ef - kappa[]
             g = ef * V[i] * (T[k]-m[i, k]) / sw[i]
             q = v[i] * smoothstep(n[i, k]/nmin)
 
-            h2 = q ./ (q .+ venv) # Heritability
+            h2 = q / (q + venv[]) # Heritability
 
             # Assign calculated rates to vector of derivatives for output
             dndt[i, k] = (n[i, k]*b+sumgr)*smoothstep(n[i, k]/1.0e-6) + summig
@@ -154,17 +154,17 @@ function (em::AkessonModel)(dudt, u, pars, t)
      @unpack eta = p
      @unpack alpha, beta, SR = em
      for i = 1:(SR-1)
-         alpha[i,i] = eta / sqrt(2.0 * V[i] + 2.0 * V[i] + eta^2)
+         alpha[i,i] = eta[] / sqrt(2.0 * V[i] + 2.0 * V[i] + eta[]^2)
          for j = (i+1):SR
-             Omega = 2.0 * V[i] + 2.0 * V[j] + eta^2
+             Omega = 2.0 * V[i] + 2.0 * V[j] + eta[]^2
              dm = mk[j] - mk[i]
-             alpha[i,j] = eta * exp(-dm*dm/Omega)/sqrt(Omega)
+             alpha[i,j] = eta[] * exp(-dm*dm/Omega)/sqrt(Omega)
              alpha[j,i] = alpha[i,j]
              beta[i,j] = 2.0 * V[i] * alpha[i,j] * dm / Omega
              beta[j,i] = - beta[i,j] * V[j]/V[i]
          end
      end
-     alpha[SR, SR] = eta/sqrt(2.0*V[SR]+2.0*V[SR]+eta^2);
+     alpha[SR, SR] = eta[]/sqrt(2.0*V[SR]+2.0*V[SR]+eta[]^2);
  end
  
  function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p)  where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
