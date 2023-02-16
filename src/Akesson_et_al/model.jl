@@ -14,6 +14,7 @@ Base.@kwdef struct AkessonModel{MP,WG,CP,Tr,Fr,A,B} <: AbstractModel
     width_growth::WG#width growth type
     competition::CP #competition type
     trophic::Tr #whether there is a trophic level or not
+    # TODO: matrix stored for efficiency should be deleted, as they impede the model to be differentiable
     feeding_rates::Fr # stored matrix for efficiency
     alpha::A # stored matrix for efficiency
     beta::B # stored matrix for efficiency
@@ -85,7 +86,7 @@ function (em::AkessonModel)(dudt, u, pars, t)
     for k = 1:L
         nk = @view n[:, k]
         mk = @view m[:, k]
-        _update_alpha_beta!(mk, em, V, pars)
+        # _update_alpha_beta!(mk, em, V, pars)
         funcresp!(feeding_rates, nk, pars, trophic) # Feeding rate of species i on j in patch k
         wk = _get_width_growth_curve(pars, mk, width_growth)
         sw = wk.^2 .+ V
@@ -96,8 +97,9 @@ function (em::AkessonModel)(dudt, u, pars, t)
             bsumgr = 0.0
             # Species interaction terms in density and then trait evolution equations
             for j = 1:S
-                sumgr += -n[i, k] * alpha[i, j] * n[j, k] + _feeding(nk, feeding_rates, i, j, pars, trophic)
-                bsumgr += beta[i, j] * n[j, k]
+                alpha_ij, beta_ij = get_alpha_beta(mk[i], mk[j], V[i], V[j], pars, em)
+                sumgr += -n[i, k] * alpha_ij * n[j, k] + _feeding(nk, feeding_rates, i, j, pars, trophic)
+                bsumgr += beta_ij * n[j, k]
             end
             summig = 0.0
             bsummig = 0.0
@@ -150,27 +152,43 @@ function (em::AkessonModel)(dudt, u, pars, t)
      return w
  end
  
- function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:TraitDep}}
-     @unpack eta = p
-     @unpack alpha, beta, SR = em
-     for i = 1:(SR-1)
-         alpha[i,i] = eta[] / sqrt(2.0 * V[i] + 2.0 * V[i] + eta[]^2)
-         for j = (i+1):SR
-             Omega = 2.0 * V[i] + 2.0 * V[j] + eta[]^2
-             dm = mk[j] - mk[i]
-             alpha[i,j] = eta[] * exp(-dm*dm/Omega)/sqrt(Omega)
-             alpha[j,i] = alpha[i,j]
-             beta[i,j] = 2.0 * V[i] * alpha[i,j] * dm / Omega
-             beta[j,i] = - beta[i,j] * V[j]/V[i]
-         end
-     end
-     alpha[SR, SR] = eta[]/sqrt(2.0*V[SR]+2.0*V[SR]+eta[]^2);
- end
+#  TODO: not used anymore
+#  function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:TraitDep}}
+#      @unpack eta = p
+#      @unpack alpha, beta, SR = em
+#      for i = 1:(SR-1)
+#          alpha[i,i] = eta[] / sqrt(2.0 * V[i] + 2.0 * V[i] + eta[]^2)
+#          for j = (i+1):SR
+#              Omega = 2.0 * V[i] + 2.0 * V[j] + eta[]^2
+#              dm = mk[j] - mk[i]
+#              alpha[i,j] = eta[] * exp(-dm*dm/Omega)/sqrt(Omega)
+#              alpha[j,i] = alpha[i,j]
+#              beta[i,j] = 2.0 * V[i] * alpha[i,j] * dm / Omega
+#              beta[j,i] = - beta[i,j] * V[j]/V[i]
+#          end
+#      end
+#      alpha[SR, SR] = eta[]/sqrt(2.0*V[SR]+2.0*V[SR]+eta[]^2);
+#  end
  
- function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p)  where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
-    @unpack alpha, beta = em
-    alpha .= p.a
-    beta .= 0.
+#  function _update_alpha_beta!(mk, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}, V, p)  where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
+#     @unpack alpha, beta = em
+#     alpha .= p.a
+#     beta .= 0.
+#  end
+
+
+ function get_alpha_beta(mki, mkj, Vi, Vj, p, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:TraitDep}}
+    @unpack eta = p
+    @unpack SR = em
+    Omega_ij = 2.0 .* Vi .+ 2.0 .* Vj .+ eta[]^2
+    dm = mkj .- mki
+    alpha_ij = eta[] * exp.(- dm^2 / Omega_ij) / sqrt.(Omega_ij)
+    beta_ij = 2.0 * Vi * alpha_ij * dm / Omega_ij
+    return alpha_ij, beta_ij
+ end
+
+ function get_alpha_beta(mki, mkj, Vi, Vj, p, em::AkessonModel{MP,WG,CP,Tr,Fr,A,B}) where {MP,WG,Tr,Fr,A,B, CP <: Competition{:Standard}}
+    return p.a, 0.
  end
 
  function _feeding(nk, feeding_rates, i, j, p, ::Trophic{true})

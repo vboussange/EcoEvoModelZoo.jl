@@ -231,7 +231,7 @@ end
                                 competition = Competition{:Standard}(), 
                                 trophic= Trophic{false}(), )
 
-    function dummy_loss(a)
+    function dummy_loss(rho)
         before_cc = simulate(model, p = (rho = rho,))
         sum(before_cc.^2)
     end
@@ -239,6 +239,38 @@ end
     # Checking differentiation
     rho = get_p(model).rho
     J = ForwardDiff.gradient(dummy_loss, rho)
+
+    @test J isa Vector
+    @test !any(isnan.(J))
+    @test !any(isinf.(J))
+end
+
+@testset "Testing differentiation of eta" begin
+
+    tstart = -4000 # starting time (relative to start of climate change at t = 0)
+    tend = 2500 # time at which integration ends
+    alg = Tsit5()
+    abstol = 1e-6
+    reltol = 1e-6
+    # integrate prob with Julia
+    tspan = (tstart, 0)
+    saveat = tspan[1]:200:tspan[2]
+    
+    model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat);
+                                land = Landscape(1),
+                                temp = Temperature(),
+                                width_growth = WidthGrowth{:TraitDep}(), 
+                                competition = Competition{:TraitDep}(), 
+                                trophic= Trophic{false}(), )
+
+    function dummy_loss(eta)
+        before_cc = simulate(model, p = (eta = eta,))
+        sum(before_cc.^2)
+    end
+
+    # Checking differentiation
+    rho = get_p(model).eta
+    J = ForwardDiff.gradient(dummy_loss, eta)
 
     @test J isa Vector
     @test !any(isnan.(J))
