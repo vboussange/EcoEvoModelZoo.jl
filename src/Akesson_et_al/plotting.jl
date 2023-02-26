@@ -6,7 +6,7 @@ $SIGNATURES
 
 Here we plot both consumers and resources
 """
-function plotting_N_through_time(ax, u, ts, l, model, linestyle = "-")
+function plotting_N_through_time(ax, u, ts, l, model; linestyle = "-")
     @unpack SR, SC = model
     @assert size(u, 1) == 2 * (SR + SC) # u stores N and μ
     _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
@@ -26,7 +26,7 @@ $SIGNATURES
 - `ts`: should be indices of `saveat` and not real times
 Here we plot both consumers and resources
 """
-function plotting_mu_through_time(ax, u, ts, l, pars, linestyle="-")
+function plotting_mu_through_time(ax, u, ts, l, pars; linestyle="-")
     @unpack SR, SC = pars
     @assert size(u, 1) == 2 * (SR + SC) # u stores N and μ
     _cmap = plt.cm.get_cmap("tab20", SR+SC) # only for cb
