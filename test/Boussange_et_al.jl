@@ -1,6 +1,5 @@
 using ParametricModels
 using UnPack
-using DocStringExtensions
 using Statistics
 using ComponentArrays
 using Distributions
