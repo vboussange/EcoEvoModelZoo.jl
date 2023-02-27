@@ -4,8 +4,8 @@ using Statistics
 using ComponentArrays
 using Distributions
 using OrdinaryDiffEq
-using UnPack
 using Test
+using Graphs
 
 ## Defining phenotypic space and spatial graph
 M = 7

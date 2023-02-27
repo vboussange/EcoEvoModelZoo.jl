@@ -2,8 +2,8 @@ using DiffEqOperators
 using Graphs
 
 # this function is called to evaluate the convolution of local u and alpha evaluated at phen_space[i]
-function int_competition_fn(model, u, x, s1, p) where T <: AbstractArray
-    @unpack phen_space = model
+function int_competition_fn(model, u, x, s1, p)
+    @unpack phen_space, competition_fn = model
     dS = phen_space[2]-phen_space[1]
     C = 0.5f0 * (competition_fn(u[1], x, s1, phen_space[1], p) + competition_fn(u[end], x, s1, phen_space[end], p))
     C += sum(competition_fn.(u[2:end-1], x, s1, phen_space[2:end-1], Ref(p)))
@@ -138,7 +138,7 @@ Base.@kwdef struct EcoEvoGraph{MP,G,PS,DS,DX,BFN,CFN} <: AbstractModel
 end
 
 function (model::EcoEvoGraph)(du,u,p,t)
-    @unpack phen_space, Δ_s, Δ_x, g, birth_fn, competition_fn = model
+    @unpack phen_space, Δ_s, Δ_x, g, birth_fn = model
     @unpack m, σ_mu, mu = p
 
     u[u[:,:] .< eps()] .= 0

@@ -3,6 +3,7 @@ using Test
 
 @testset "EcoEvoModelZoo.jl" begin
     # Write your tests here.
+    include("Boussange_et_al.jl")
     include("Huisman_et_al.jl")
     include("McCann_et_al.jl")
     include("Akesson_et_al/model.jl")

@@ -36,7 +36,7 @@ false ? (using PyPlot) : nothing
                                             maxiters = 50_000,
                                             ))
     sol = simulate(model, u0 = u0_true)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
 end
 
 @testset "McCann model with omnivory" begin
@@ -69,5 +69,5 @@ end
                                             maxiters = 50_000,
                                             ))
     sol = simulate(model, u0 = u0_true)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
 end

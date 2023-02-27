@@ -50,7 +50,7 @@ false ? (using PyPlot) : nothing
 
     # Species 1:5
     sol = simulate(model, u0 = u0)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
     if false # visual test
         _cmap = PyPlot.cm.get_cmap("tab20", 17);
         color_palette = [_cmap(i) for i in 1:17]
@@ -125,7 +125,7 @@ end
 
     # Species 1:5
     sol = simulate(model, u0 = u0)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
     if false # visual test
         _cmap = PyPlot.cm.get_cmap("tab20", 17);
         color_palette = [_cmap(i) for i in 1:17]

@@ -31,7 +31,7 @@ end
     model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat))
 
     sol = simulate(model)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
 end
 
 if test_rcall
@@ -69,7 +69,7 @@ if test_rcall
 
         println("Integrating with Julia")
         @time before_cc = simulate(model)
-        @test before_cc.retcode == :Success
+        @test SciMLBase.successful_retcode(before_cc.retcode)
 
         uend = Array(before_cc)[:, :, end]
 
@@ -122,7 +122,7 @@ if test_rcall
 
         println("Integrating with Julia")
         @time before_cc = simulate(model)
-        @test before_cc.retcode == :Success
+        @test SciMLBase.successful_retcode(before_cc.retcode)
 
         uend = Array(before_cc)[:, :, end]
 
@@ -176,7 +176,7 @@ if test_rcall
 
         println("Integrating with Julia")
         @time before_cc = simulate(model)
-        @test before_cc.retcode == :Success
+        @test SciMLBase.successful_retcode(before_cc.retcode)
 
         uend = Array(before_cc)[:, :, end]
 
@@ -210,7 +210,7 @@ end
     model = init_akesson_model(mp = ModelParams(;tspan, alg, reltol, abstol, saveat);)
 
     sol = simulate(model)
-    @test sol.retcode == :Success
+    @test SciMLBase.successful_retcode(sol.retcode)
 end
 
 @testset "Testing differentiation, in the setting with no spatial structure" begin

@@ -1,6 +1,6 @@
 # EcoEvoModelZoo
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://vboussange.github.io/EcoEvoModelZoo.jl/stable/)
+<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://vboussange.github.io/EcoEvoModelZoo.jl/stable/) -->
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://vboussange.github.io/EcoEvoModelZoo.jl/dev/)
 [![Build Status](https://github.com/vboussange/EcoEvoModelZoo.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/vboussange/EcoEvoModelZoo.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/vboussange/EcoEvoModelZoo.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/vboussange/EcoEvoModelZoo.jl)
@@ -21,8 +21,8 @@ This package contains a collection of eco-evolutionary models written consistent
 
 
 ## Contributing
-
-We encourage contributions of new models and documentation.
+Please reach me out if you are interested in this project!
+<!-- We encourage contributions of new models and documentation. -->
 
 ### Share a new model
 If you want to share a new model, we recommend following these guidelines:
