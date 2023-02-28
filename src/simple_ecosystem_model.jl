@@ -1,8 +1,16 @@
 """
     $SIGNATURES
-    
-Based on [Watson et al 2015](https://www.sciencedirect.com/science/article/pii/S0079661114001463) for fish dynamics
-and [Steele and Henderson 1981](https://www.jstor.org/stable/2460753) for the nutrient phytoplankton zooplankton dymamics.
+
+General multitrophic ecosystem model.
+
+# Args
+- `mp`: the model parameters.
+- `intinsic_growth_rate`:  the intrinsic growth rate of the population.
+- `carrying_capacity`: the maximum population size that can be supported by the environment.
+- `competition`:  the effect of population density on the growth rate.
+- `resource_conversion_efficiency`: the efficiency of converting resources into population growth.
+- `feeding`: feeding rates of the population.
+
 """
 Base.@kwdef struct SimpleEcosystemModel{MP,IGP,CC,CT,RCE,FE} <: AbstractModel
     mp::MP
@@ -23,8 +31,6 @@ function (model::SimpleEcosystemModel)(du, u, p, t)
     ϵ = resource_conversion_efficiency(p, t)
     F = feeding(ũ, p, t)
     
-    # TODO: this is work in progress and should be tested
-    # TODO: one should make sure that the sum used for the feeding rates make sense
     feed_gains = F * ũ
     pred_loss = F' * ũ
     du .= ũ .*(r .- A ./ K .+ ϵ .* feed_gains .- pred_loss)
