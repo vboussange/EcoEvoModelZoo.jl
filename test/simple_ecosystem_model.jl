@@ -213,7 +213,6 @@ end
 
 
 @testset "5 species ecosystem mode by post et al" begin
-        # TODO: seems like this is not working
         # https://www.jstor.org/stable/177129
         using SimpleWeightedGraphs
         alg = BS3()
@@ -248,15 +247,15 @@ end
 
         q = sparse(zeros(N,N))
         q[2,1] = x_c * y_c / R_0; q[5,4] = x_c * y_c / R_0;
-        q[3,2] = x_p * y_pc / C_0; q[3,5] = x_p * y_pc / C_0
+        q[3,2] = x_p * y_p / C_0; q[3,5] = x_p * y_p / C_0
 
-        p = (r = vcat(1., -x_c, -x_p, 1., -x_c,) , 
-        K = ones(N), 
-        A = diagm(vcat(1,0,0,1,0)), 
-        ϵ = ones(N), 
-        q = q,
-        H = H, 
-        W = adjacency_matrix(foodweb))
+        p = (r = vcat(1., -x_c, -x_p, 1., -x_c,), 
+                K = ones(N), 
+                A = diagm(vcat(1,0,0,1,0)), 
+                ϵ = ones(N), 
+                q = q,
+                H = H, 
+                W = adjacency_matrix(foodweb))
 
         u0_true = rand(N)
 
