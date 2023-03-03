@@ -7,7 +7,9 @@
 
 ![](docs/src/time_series_5_species_ecosyste_model.png)
 
-This package contains a collection of eco-evolutionary models written consistently in Julia using [ParametricModels.jl](https://github.com/vboussange/PiecewiseInference.jl). These models are domain-specific and compatible with automatic differentiation for smooth integration with Machine Learning techniques, providing the best of both theoretical and data-driven models. The long-term goal of this package is to build a performant library of models that can be used to enhance our mechanistic understanding of living systems and to provide robust, domain-specific biodiversity forecast. 
+**EcoEvoModelZoo.jl** is a Julia package that offers a collection of eco-evolutionary models written in a consistent style using [ParametricModels.jl](https://github.com/vboussange/ParametricModels.jl). Although these models are inspired from theoretical modelling works, they have been carefully implemented to be compatible with automatic differentiation and can be smoothly integrated with Machine Learning frameworks such as [Flux.jl](https://github.com/FluxML/Flux.jl) and [PiecewiseInference.jl](https://github.com/vboussange/PiecewiseInference.jl). This allows for the testing, refinement and validation of the models using real data from empirical systems.
+
+The long-term goal of EcoEvoModelZoo.jl is to provide high-performance eco-evolutionary models that combine the strengths of theoretical and data-driven models. Our vision is to use EcoEvoModelZoo.jl models in conjunction with ML techniques to enhance our understanding of living systems and provide robust biodiversity forecasts.
 
 ## Model zoo
 ### Spatial eco-evolutionary models
@@ -23,7 +25,7 @@ This package contains a collection of eco-evolutionary models written consistent
 
 
 ## Contributing
-Please reach me out if you are interested in this project!
+Please reach out if you are interested in this project!
 <!-- We encourage contributions of new models and documentation. -->
 
 ### Share a new model
