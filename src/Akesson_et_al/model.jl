@@ -5,9 +5,11 @@ using DocStringExtensions
 """
     $SIGNATURES
 
-This model is inspired from [Akesson et al. 2021](https://www.nature.com/articles/s41467-021-24977-x).
+This model is inspired from [Akesson et al.
+2021](https://www.nature.com/articles/s41467-021-24977-x).
 
-Specialized variants are provided in other `AbstractModel`s.
+Specialized variants are provided in other `AbstractModel`s. Best constructure
+with `init_akesson_model`.
 """
 Base.@kwdef struct AkessonModel{MP,WG,CP,Tr,Fr,A,B} <: AbstractModel
     mp::MP # standard model parameters
@@ -24,6 +26,106 @@ Base.@kwdef struct AkessonModel{MP,WG,CP,Tr,Fr,A,B} <: AbstractModel
     SC::Int64 # number of consumers
 end
 
+
+"""
+$SIGNATURES
+
+# Arguments
+- `width_growth::WidthGrowth`: an instance of the WidthGrowth struct representing the width growth function.
+- `competition::Competition`: an instance of the Competition struct representing the competition function.
+- `trophic::Tr`: an instance of the Trophic struct representing the trophic interaction. Defaults to Trophic{false}() representing a single trophic level.
+- `SR::Int`: the number of species in each patch. Defaults to 50.
+- `SC::Int`: the number of patches. Defaults to 0 (only one patch).
+- `kwargs`: additional keyword arguments to pass to the Base.ODEProblem constructor.
+
+# Example
+
+Here we simulate Akesson model in the most simple version with one trophic
+level, one patch, and where competition is temperature dependent. The code
+starts by setting the simulation time frame, choosing a differential equation
+solver algorithm, and defining the tolerance levels for the solver. The model is
+then initialized with various parameters, including the landscape size, carrying
+capacity, and temperature dependency of competition. The temperature over a
+period of 6500 years is plotted using matplotlib. The model is then simulated
+before and after climate change, with the population density and population mean
+trait (optimal temperature) plotted for each time step.
+
+```julia
+using EcoEvoModelZoo
+using PythonCall
+using OrdinaryDiffEq
+using ParametricModels
+plt = pyimport("matplotlib.pyplot")
+
+tstart = -4000 # starting time (relative to start of climate change at t = 0)
+tend = 2500 # time at which integration ends
+alg = Tsit5()
+abstol = 1e-6
+reltol = 1e-6
+# integrate prob with Julia
+tspan = (tstart, 0)
+tsteps = tspan[1]:200:tspan[2]
+L = 10
+SR = 50
+temp = Temperature()
+land = Landscape(L)
+
+model = init_akesson_model(;mp = ModelParams(;tspan, alg, reltol, abstol, saveat = tsteps),
+                            land = Landscape(L),
+                            temp,
+                            SR = SR,
+                            width_growth = WidthGrowth{:TraitDep}(), 
+                            competition = Competition{:TraitDep}(), 
+                            trophic= Trophic{false}(), 
+                            )
+
+# Plotting temperature over 6500 years, from -4000 to 2500
+fig, ax = plt.subplots(1)
+ts = -100:1:400
+p = get_p(model)
+temp_ts = [temp.(land.x, t)[1] for t in ts]
+ax.plot(ts, temp_ts)
+display(fig)
+
+#################
+### BEFORE Climate Change ###
+#################
+sol = simulate(model)
+ode_data = Array(sol)
+
+# initial temperature
+temp.(land.x, 100.)
+
+# plotting evolution before CC
+fig, ax = plt.subplots(1)
+l = 1 # patch index
+plotting_N_through_time(ax, ode_data, tsteps, l, model)
+# ax.set_yscale("log")
+display(fig)
+
+
+#################
+### After Climate Change  ###
+#################
+tspan = (0, 300)
+step = 1
+tsteps = tspan[1]:1.:tspan[2]
+sol = simulate(model, tspan = tspan, saveat = tsteps, u0 = ode_data[:,:,end])
+ode_data = Array(sol)
+
+# plotting evolution after CC
+fig, axs = plt.subplots(1, 2)
+ts = 1:length(tsteps)
+l = 1 # patch index
+plotting_N_through_time(axs[0], ode_data, tsteps, l, model)
+axs[0].set_ylabel("Population density")
+# axs[0].set_yscale("log")
+plotting_mu_through_time(axs[1], ode_data, tsteps, l, model)
+axs[1].set_ylabel("Population mean trait\n(Optimal temperature)")
+fig.tight_layout()
+```
+
+"""
 function init_akesson_model(;mp = ModelParams(),
                             land = Landscape(50),
                             temp = Temperature(),
