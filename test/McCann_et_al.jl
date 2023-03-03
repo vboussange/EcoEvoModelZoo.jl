@@ -17,7 +17,7 @@ false ? (using PyPlot) : nothing
     tsteps = 550:4:800
     p_true = (x_c = [0.4], 
             x_p = [0.08], 
-            y_c = [2.01], 
+            y_c = [2.01],
             y_p = [5.00], 
             R_0 = [0.16129], 
             C_0 = [0.5])
