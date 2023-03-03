@@ -4,11 +4,15 @@ CurrentModule = EcoEvoModelZoo
 
 # EcoEvoModelZoo
 
-Documentation for [EcoEvoModelZoo](https://github.com/vboussange/EcoEvoModelZoo.jl).
+```@eval
+DocStringExtensions.README
+```
 
 ```@index
 ```
 
 ```@autodocs
 Modules = [EcoEvoModelZoo]
+Private = false
+<!-- Filter = t -> typeof(t) <: AbstractModel -->
 ```

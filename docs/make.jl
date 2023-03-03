@@ -1,5 +1,6 @@
 using EcoEvoModelZoo
 using Documenter
+import ParametricModels.AbstractModel
 
 DocMeta.setdocmeta!(EcoEvoModelZoo, :DocTestSetup, :(using EcoEvoModelZoo); recursive=true)
 

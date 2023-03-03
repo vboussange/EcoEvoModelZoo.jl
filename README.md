@@ -5,6 +5,8 @@
 [![Build Status](https://github.com/vboussange/EcoEvoModelZoo.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/vboussange/EcoEvoModelZoo.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/vboussange/EcoEvoModelZoo.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/vboussange/EcoEvoModelZoo.jl)
 
+![](docs/src/time_series_5_species_ecosyste_model.png)
+
 This package contains a collection of eco-evolutionary models written consistently in Julia using [ParametricModels.jl](https://github.com/vboussange/PiecewiseInference.jl). These models are domain-specific and compatible with automatic differentiation for smooth integration with Machine Learning techniques, providing the best of both theoretical and data-driven models. The long-term goal of this package is to build a performant library of models that can be used to enhance our mechanistic understanding of living systems and to provide robust, domain-specific biodiversity forecast. 
 
 ## Model zoo
