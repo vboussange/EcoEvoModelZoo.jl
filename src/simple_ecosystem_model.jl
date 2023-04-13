@@ -91,7 +91,8 @@ end
 
 function (model::SimpleEcosystemModel)(du, u, p, t)
     @unpack intinsic_growth_rate, carrying_capacity, competition, feeding, resource_conversion_efficiency = model
-    ũ = max.(u, 0.)
+    T = eltype(u)
+    ũ = max.(u, zero(T))
 
     r = intinsic_growth_rate(p, t)
     K = carrying_capacity(p, t)
