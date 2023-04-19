@@ -1,19 +1,12 @@
 cd(@__DIR__)
 using Test
 using UnPack
-using RCall
 using Random
 using Distributions
 using LinearAlgebra
 using ForwardDiff
 using OrdinaryDiffEq
 using EcoEvoModelZoo
-
-test_rcall = false
-test_plot = false
-
-test_rcall ? (using RCall) : nothing
-test_plot ? (using PyPlot) : nothing
 
 @testset "generate_network" begin
     SR = 10
@@ -64,58 +57,58 @@ end
     @test !any(isinf.(F))
 end
 
-if test_rcall
-    @testset "init_params" begin
+# if test_rcall
+#     @testset "init_params" begin
 
-        # default parameters
-        pars, ic = init_params()
+#         # default parameters
+#         pars, ic = init_params()
 
-        # default R parameters
-        R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
-        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
-        ic = [ninit; muinit] # merge initial conditions into a vector
-        S = S |> Int
-        SR = SR |> Int
-        SC = SC |> Int
-        L = L |> Int
-        x = collect(0:L-1) ./ (Float64(L) - 1.0)
+#         # default R parameters
+#         R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
+#         @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+#         ic = [ninit; muinit] # merge initial conditions into a vector
+#         S = S |> Int
+#         SR = SR |> Int
+#         SC = SC |> Int
+#         L = L |> Int
+#         x = collect(0:L-1) ./ (Float64(L) - 1.0)
 
-        # coerce parameters into a dictionary
-        parsR = Dict{String,Any}()
-        @pack! parsR = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
+#         # coerce parameters into a dictionary
+#         parsR = Dict{String,Any}()
+#         @pack! parsR = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
 
-        @test pars[:S] == parsR["S"]
-        @test pars[:SR] == parsR["SR"]
-        @test pars[:SC] == parsR["SC"]
-        @test pars[:L] == parsR["L"]
-        @test size(pars[:rho]) == size(parsR["rho"])
-        # uncomplete
-    end
+#         @test pars[:S] == parsR["S"]
+#         @test pars[:SR] == parsR["SR"]
+#         @test pars[:SC] == parsR["SC"]
+#         @test pars[:L] == parsR["L"]
+#         @test size(pars[:rho]) == size(parsR["rho"])
+#         # uncomplete
+#     end
 
-    @testset "Compare `eqs` evaluation against R script" begin
-        R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
-        @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
-        ic = [ninit; muinit] # merge initial conditions into a vector
-        S = S |> Int
-        SR = SR |> Int
-        SC = SC |> Int
-        L = L |> Int
-        x = collect(0:L-1) ./ (Float64(L) - 1.0)
+#     @testset "Compare `eqs` evaluation against R script" begin
+#         R"source('/Users/victorboussange/ETHZ/projects/piecewise-inference/code/model/spatial_ecoevo-1.0.0/ecoevo_norun.R')"
+#         @rget SR SC S L rho kappa a eta eps W venv vmat s nmin aw bw Tmax Tmin Th arate Cmax Cmin tE d mig model ninit muinit
+#         ic = [ninit; muinit] # merge initial conditions into a vector
+#         S = S |> Int
+#         SR = SR |> Int
+#         SC = SC |> Int
+#         L = L |> Int
+#         x = collect(0:L-1) ./ (Float64(L) - 1.0)
 
-        # coerce parameters into a dictionary
-        pars = Dict{String,Any}()
-        @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
+#         # coerce parameters into a dictionary
+#         pars = Dict{String,Any}()
+#         @pack! pars = SR, SC, S, L, rho, kappa, a, eta, eps, W, venv, vmat, s, nmin, aw, bw, Tmax, Tmin, Th, arate, Cmax, Cmin, tE, d, mig, model, x
 
-        dudt = similar(ic)
+#         dudt = similar(ic)
 
-        eqs!(dudt, ic, pars, 10.0)
+#         eqs!(dudt, ic, pars, 10.0)
 
-        # for comparing, one needs to reorder
-        dudt_rlike = [dudt[1:SC+SR, :][:]; dudt[SC+SR+1:end, :][:]]
+#         # for comparing, one needs to reorder
+#         dudt_rlike = [dudt[1:SC+SR, :][:]; dudt[SC+SR+1:end, :][:]]
 
-        # test with R
-        dudtR = R"eqs(1., ic, pars)"[1]
+#         # test with R
+#         dudtR = R"eqs(1., ic, pars)"[1]
 
-        @test all(isapprox.(dudt_rlike, dudtR, atol=1e-3))
-    end
-end
+#         @test all(isapprox.(dudt_rlike, dudtR, atol=1e-3))
+#     end
+# end
