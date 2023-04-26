@@ -19,6 +19,10 @@ The long-term goal of EcoEvoModelZoo.jl is to provide high-performance eco-evolu
 ### 3 species ecosystem model
 - `EcosystemModelMcCann`: 3-species chaotic model based on [McCann 1994](http://doi.wiley.com/10.2307/1939558).
 - `EcosystemModelOmnivory`: omnivory variant of McCann 1994, based on [McCann 1997](10.1098/rspb.1997.0172).
+
+### N-species ecosystemo model
+- `SimpleEcosystemModel`: generalized version of `EcosystemModelMcCann` with N-species. Can be used to reproduce e.g. the 5-species ecosystem model from [Post et al. 2000](https://www.jstor.org/stable/177129?seq=2)
+
 ### Resource competition model
 - `ResourceCompetition`: plankton ecosystem model based on [Huisman et al. 1999 Nature](http://www.nature.com/articles/46540).
 - `ResourceCompetitionSmoothMin`: variant of `ResourceCompetition` where Leibig's law is replaced by imperfect substituable resources (smooth minimum).
